@@ -84,7 +84,7 @@ describe("runServiceRestart token drift", () => {
     expect(payload.warnings?.[0]).toContain("gateway install --force");
   });
 
-  it("uses gateway.auth.token when checking drift", async () => {
+  it("prefers OPENCLAW_GATEWAY_TOKEN env when checking drift", async () => {
     loadConfig.mockReturnValue({
       gateway: {
         auth: {
@@ -107,7 +107,7 @@ describe("runServiceRestart token drift", () => {
 
     const jsonLine = runtimeLogs.find((line) => line.trim().startsWith("{"));
     const payload = JSON.parse(jsonLine ?? "{}") as { warnings?: string[] };
-    expect(payload.warnings?.[0]).toContain("gateway install --force");
+    expect(payload.warnings).toBeUndefined();
   });
 
   it("skips drift warning when disabled", async () => {
