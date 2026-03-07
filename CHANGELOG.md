@@ -309,6 +309,7 @@ Docs: https://docs.openclaw.ai
 - Docker/token persistence on reconfigure: reuse the existing `.env` gateway token during `docker-setup.sh` reruns and align compose token env defaults, so Docker installs stop silently rotating tokens and breaking existing dashboard sessions. Landed from contributor PR #33097 by @chengzhichao-xydt. Thanks @chengzhichao-xydt.
 - Agents/strict OpenAI turn ordering: apply assistant-first transcript bootstrap sanitization to strict OpenAI-compatible providers (for example vLLM/Gemma via `openai-completions`) without adding Google-specific session markers, preventing assistant-first history rejections. (#39252) Thanks @scoootscooob.
 - Discord/exec approvals gateway auth: pass resolved shared gateway credentials into the Discord exec-approvals gateway client so token-auth installs stop failing approvals with `gateway token mismatch`. Related to #38179. Thanks @0riginal-claw for the adjacent PR #35147 investigation.
+- Config/invalid-load fail-closed: stop converting `INVALID_CONFIG` into an empty runtime config, keep valid settings available only through explicit best-effort diagnostic reads, and route read-only CLI diagnostics through that path so unknown keys no longer silently drop security-sensitive config. (#28140) Thanks @bobsahur-robot and @vincentkoc.
 
 ## 2026.3.2
 
