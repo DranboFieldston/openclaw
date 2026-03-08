@@ -628,6 +628,32 @@ describe("native PDF provider API calls", () => {
     expect(body.contents[0].parts[1].text).toBe("Summarize this");
   });
 
+  it("geminiAnalyzePdf strips provider prefix from modelId", async () => {
+    const { geminiAnalyzePdf } = await import("./pdf-native-providers.js");
+    const fetchMock = mockFetchResponse({
+      ok: true,
+      json: async () => ({
+        candidates: [
+          {
+            content: { parts: [{ text: "Gemini PDF analysis" }] },
+          },
+        ],
+      }),
+    });
+
+    await geminiAnalyzePdf({
+      ...makeGeminiAnalyzeParams({
+        modelId: "google/gemini-2.0-flash",
+      }),
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url] = fetchMock.mock.calls[0];
+    expect(url).toContain("gemini-2.0-flash");
+    expect(url).not.toContain("google%2F");
+    expect(url).not.toContain("google/");
+  });
+
   it("geminiAnalyzePdf throws on API error", async () => {
     const { geminiAnalyzePdf } = await import("./pdf-native-providers.js");
     mockFetchResponse({
