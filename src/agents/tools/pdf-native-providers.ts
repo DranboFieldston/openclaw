@@ -141,7 +141,7 @@ export async function geminiAnalyzePdf(params: {
     /\/+$/,
     "",
   );
-  // Strip provider prefix if present (e.g., "google/gemini-2.0-flash" -> "gemini-2.0-flash")
+  // Strip provider prefix if present (e.g., "google/gemini-2.0-flash" -> "gemini-2.0-flash").
   // This matches parseModelRef behavior which keeps the full model ID after the first slash.
   const slashIndex = params.modelId.indexOf("/");
   const actualModelId = slashIndex !== -1 ? params.modelId.slice(slashIndex + 1) : params.modelId;
