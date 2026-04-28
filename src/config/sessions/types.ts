@@ -12,6 +12,18 @@ export type SessionChannelId = ChannelId;
 
 export type SessionChatType = ChatType;
 
+export type ProxyBinding = {
+  proxySessionKey: string;
+  channelId: string;
+  targetSessionKey: string;
+  ownerAgentId: string;
+  mode: "broadcast" | "mention-only";
+  status: "active" | "paused" | "closed";
+  includeOwnMessages: boolean;
+  createdAt: number;
+  lastActivity?: number;
+};
+
 export type SessionOrigin = {
   label?: string;
   provider?: string;
@@ -319,6 +331,8 @@ export type SessionEntry = {
    */
   pluginDebugEntries?: SessionPluginDebugEntry[];
   acp?: SessionAcpMeta;
+  /** Proxy binding configuration for channel bridging */
+  proxyBinding?: ProxyBinding;
 };
 
 function isSessionPluginTraceLine(line: string): boolean {

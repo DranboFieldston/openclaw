@@ -40,7 +40,7 @@ export type GatewaySessionRow = {
   spawnDepth?: number;
   subagentRole?: SessionEntry["subagentRole"];
   subagentControlScope?: SessionEntry["subagentControlScope"];
-  kind: "direct" | "group" | "global" | "unknown";
+  kind: "direct" | "group" | "proxy" | "global" | "unknown";
   label?: string;
   displayName?: string;
   derivedTitle?: string;
