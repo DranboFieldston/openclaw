@@ -53,6 +53,7 @@ import {
   type SessionEntry,
   type SessionStoreTarget,
   type SessionScope,
+  type ProxyBinding,
 } from "../config/sessions.js";
 import type { OpenClawConfig } from "../config/types.openclaw.js";
 import { openBoundaryFileSync } from "../infra/boundary-file-read.js";
@@ -640,6 +641,14 @@ export function classifySessionKey(key: string, entry?: SessionEntry): GatewaySe
   if (key === "unknown") {
     return "unknown";
   }
+  // Proxy sessions: check if entry has a proxy binding configured
+  if (entry?.proxyBinding?.proxySessionKey) {
+    return "proxy";
+  }
+  // Proxy sessions: check session key pattern
+  if (key.includes(":proxy:")) {
+    return "proxy";
+  }
   if (entry?.chatType === "group" || entry?.chatType === "channel") {
     return "group";
   }
@@ -647,6 +656,21 @@ export function classifySessionKey(key: string, entry?: SessionEntry): GatewaySe
     return "group";
   }
   return "direct";
+}
+
+/**
+ * Resolve an active proxy binding for a given session key from the store.
+ * Returns the ProxyBinding if the entry has an active proxy binding, else null.
+ */
+export function resolveProxyBinding(
+  store: Record<string, SessionEntry>,
+  sessionKey: string,
+): ProxyBinding | null {
+  const entry = store[sessionKey];
+  if (entry?.proxyBinding?.status === "active") {
+    return entry.proxyBinding;
+  }
+  return null;
 }
 
 export function parseGroupKey(

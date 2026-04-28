@@ -146,9 +146,20 @@ export async function recordInboundSessionAndDispatchReply(params: {
   onDispatchError: (err: unknown, info: { kind: string }) => void;
   replyOptions?: ReplyOptionsWithoutModelSelected;
 }): Promise<void> {
+  // Resolve target agent from session key (for proxy routing)
+  const resolvedSessionKey = params.ctxPayload.SessionKey ?? params.routeSessionKey;
+  let resolvedAgentId = params.agentId;
+  if (resolvedSessionKey !== params.routeSessionKey) {
+    const { resolveAgentIdFromSessionKey } = await import("./routing.js");
+    const targetAgentId = resolveAgentIdFromSessionKey(resolvedSessionKey);
+    if (targetAgentId) {
+      resolvedAgentId = targetAgentId;
+    }
+  }
+
   const { onModelSelected, ...replyPipeline } = createChannelReplyPipeline({
     cfg: params.cfg,
-    agentId: params.agentId,
+    agentId: resolvedAgentId,
     channel: params.channel,
     accountId: params.accountId,
   });

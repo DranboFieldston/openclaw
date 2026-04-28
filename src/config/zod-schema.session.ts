@@ -70,6 +70,23 @@ export const SessionSchema = z
       })
       .strict()
       .optional(),
+    channelBridge: z
+      .object({
+        proxies: z
+          .record(
+            z.string(),
+            z
+              .object({
+                targetSessionKey: z.string(),
+                mode: z.enum(["broadcast", "mention-only"]).optional(),
+                includeOwnMessages: z.boolean().optional(),
+              })
+              .strict(),
+          )
+          .optional(),
+      })
+      .strict()
+      .optional(),
     maintenance: z
       .object({
         mode: z.enum(["enforce", "warn"]).optional(),
