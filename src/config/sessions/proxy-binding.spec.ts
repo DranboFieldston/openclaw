@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { classifySessionKey, resolveProxyBinding } from "../../gateway/session-utils.js";
+import {
+  classifySessionKey,
+  resolveProxyBinding,
+  resolveProxyBindingFromStoreOrConfig,
+} from "../../gateway/session-utils.js";
 import { normalizeStoreSessionKey, resolveSessionStoreEntry } from "./store-entry.js";
 
 describe("Proxy Binding Logic", () => {
@@ -30,13 +34,38 @@ describe("Proxy Binding Logic", () => {
     ).toBe("proxy");
   });
 
-  it("resolves active proxy binding", () => {
+  it("resolves proxy binding from store", () => {
     const binding = resolveProxyBinding(mockStore as any, "agent:proxy-bot:discord:channel:123");
     expect(binding).toBeTruthy();
     expect(binding?.targetSessionKey).toBe("agent:main-bot:discord:channel:123");
   });
 
-  it("returns null for inactive or missing proxy binding", () => {
+  it("resolves proxy binding from config when store has none", () => {
+    const cfg = {
+      session: {
+        channelBridge: {
+          proxies: {
+            "discord:123": {
+              targetSessionKey: "agent:main-bot:discord:direct:999",
+              mode: "broadcast",
+              includeOwnMessages: true,
+            },
+          },
+        },
+      },
+    } as any;
+    const binding = resolveProxyBindingFromStoreOrConfig(
+      cfg,
+      {} as any,
+      "agent:proxy-bot:discord:channel:123",
+    );
+    expect(binding).toBeTruthy();
+    expect(binding?.targetSessionKey).toBe("agent:main-bot:discord:direct:999");
+    expect(binding?.channelId).toBe("discord:123");
+    expect(binding?.mode).toBe("broadcast");
+  });
+
+  it("returns null for inactive or missing proxy binding from store", () => {
     const inactiveStore = {
       "agent:proxy-bot": {
         proxyBinding: { status: "paused" },
