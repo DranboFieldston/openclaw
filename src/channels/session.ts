@@ -43,9 +43,11 @@ export async function recordInboundSession(params: {
 
   // Proxy binding resolution: redirect to target session key if active proxy binding exists
   const { loadSessionStore } = await import("../config/sessions/store-load.js");
-  const { resolveProxyBinding } = await import("../gateway/session-utils.js");
+  const { resolveProxyBindingFromStoreOrConfig } = await import("../gateway/session-utils.js");
+  const { loadConfig } = await import("../config/config.js");
   const store = loadSessionStore(storePath);
-  const proxyBinding = resolveProxyBinding(store, canonicalSessionKey);
+  const cfg = loadConfig();
+  const proxyBinding = resolveProxyBindingFromStoreOrConfig(cfg, store, canonicalSessionKey);
   if (proxyBinding) {
     const targetKey = normalizeLowercaseStringOrEmpty(proxyBinding.targetSessionKey);
     if (targetKey && targetKey !== canonicalSessionKey) {

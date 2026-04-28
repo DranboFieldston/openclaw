@@ -801,6 +801,46 @@ export function resolveProxyBinding(
   return null;
 }
 
+/**
+ * Resolve an active proxy binding from config and store.
+ * Checks session store first, then falls back to config channelBridge.
+ */
+export function resolveProxyBindingFromStoreOrConfig(
+  cfg: OpenClawConfig,
+  store: Record<string, SessionEntry>,
+  sessionKey: string,
+): ProxyBinding | null {
+  // 1. Store wins
+  const storeBinding = resolveProxyBinding(store, sessionKey);
+  if (storeBinding) return storeBinding;
+
+  // 2. Extract channel ID from session key for config lookup
+  const parsed = parseGroupKey(sessionKey);
+  if (!parsed?.id) return null;
+  const channelId = `${parsed.channel}:${parsed.id}`;
+
+  // 3. Check config channelBridge
+  const proxies = cfg.session?.channelBridge?.proxies;
+  if (!proxies) return null;
+
+  const proxyConfig = proxies[channelId];
+  if (!proxyConfig?.targetSessionKey) return null;
+
+  // Derive owner agent ID from target session key
+  const targetAgentId = parseAgentSessionKey(proxyConfig.targetSessionKey)?.agentId ?? "";
+
+  return {
+    proxySessionKey: sessionKey,
+    channelId,
+    targetSessionKey: proxyConfig.targetSessionKey,
+    ownerAgentId: targetAgentId,
+    mode: proxyConfig.mode ?? "broadcast",
+    status: "active",
+    includeOwnMessages: proxyConfig.includeOwnMessages ?? true,
+    createdAt: Date.now(),
+  };
+}
+
 export function parseGroupKey(
   key: string,
 ): { channel?: string; kind?: "group" | "channel"; id?: string } | null {
