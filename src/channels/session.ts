@@ -101,24 +101,19 @@ export async function recordInboundSession(params: {
   const proxyBinding = resolveProxyBindingFromStoreOrConfig(cfg, store, canonicalSessionKey);
   if (proxyBinding) {
     const targetKey = normalizeLowercaseStringOrEmpty(proxyBinding.targetSessionKey);
-    console.error(
-      `[proxy-debug] proxy binding found: proxyKey=${sessionKey} targetKey=${targetKey} mode=${proxyBinding.mode}`,
-    );
     if (targetKey && targetKey !== canonicalSessionKey) {
       const messageText = ctx.Body ?? ctx.BodyForAgent ?? "";
 
       // Phase 3: Smart routing — respect broadcast vs mention-only mode
-      const forward = shouldForwardProxiedMessage({
-        mode: proxyBinding.mode ?? "broadcast",
-        wasMentioned: ctx.WasMentioned,
-        messageText,
-        proxySessionKey: sessionKey,
-        targetSessionKey: proxyBinding.targetSessionKey,
-      });
-      console.error(
-        `[proxy-debug] forward=${forward} wasMentioned=${ctx.WasMentioned} body="${messageText.slice(0, 50)}"`,
-      );
-      if (forward) {
+      if (
+        shouldForwardProxiedMessage({
+          mode: proxyBinding.mode ?? "broadcast",
+          wasMentioned: ctx.WasMentioned,
+          messageText,
+          proxySessionKey: sessionKey,
+          targetSessionKey: proxyBinding.targetSessionKey,
+        })
+      ) {
         canonicalSessionKey = targetKey;
         // Update ctx.SessionKey so downstream dispatch uses the target session
         if (ctx.SessionKey !== undefined) {
