@@ -167,11 +167,11 @@ export async function recordInboundSession(params: {
     return;
   }
   let targetSessionKey = normalizeLowercaseStringOrEmpty(update.sessionKey);
-  // If update targets the original session key that was redirected by proxy binding,
-  // redirect the update to the target session key as well.
-  if (proxyRedirected && targetSessionKey === normalizeLowercaseStringOrEmpty(sessionKey)) {
-    targetSessionKey = canonicalSessionKey;
-  }
+  // Do NOT redirect lastRoute updates when proxy binding redirected the session key.
+  // Route updates describe where to deliver replies for *that* session. Moving the
+  // route from the proxy (guild) session onto the target (main) session means a
+  // later DM reply will try to deliver to the guild channel instead of the DM.
+  // Keep route updates on the session they belong to.
   await runtime.updateLastRoute({
     storePath,
     sessionKey: targetSessionKey,
