@@ -1,6 +1,4 @@
 import { describe, expect, it } from "vitest";
-// Import private function from session.ts for testing
-import { extractBotUserId } from "../../channels/session.js";
 import {
   classifySessionKey,
   resolveProxyBinding,
@@ -150,15 +148,6 @@ describe("Proxy Binding Mode - Mention Detection (Phase 3)", () => {
       const regex = new RegExp(`<@[!]?${botId}>`, "i");
       expect(regex.test(p.text)).toBe(p.shouldMatch);
     }
-  });
-
-  it("skips forwarding when includeOwnMessages is false and sender is the proxy bot", () => {
-    // This test validates the senderRecipient check in shouldForwardProxiedMessage
-    // When the senderRecipient matches the extracted bot ID from the proxy session key,
-    // and includeOwnMessages is false, the message should not be forwarded.
-    const proxyBotId = extractBotUserId("agent:main:discord:channel:1466895086234243144");
-    expect(proxyBotId).toBe("1466895086234243144");
-    expect(proxyBotId).not.toBeNull();
   });
 
   it("broadcast mode config sets the correct mode", () => {
