@@ -56,6 +56,7 @@ import {
   type SessionScope,
   type ProxyBinding,
 } from "../config/sessions.js";
+import type { ChannelBridgeProxyConfig } from "../config/types.base.js";
 import type { OpenClawConfig } from "../config/types.openclaw.js";
 import { openBoundaryFileSync } from "../infra/boundary-file-read.js";
 import { projectPluginSessionExtensionsSync } from "../plugins/host-hook-state.js";
@@ -820,10 +821,22 @@ export function resolveProxyBindingFromStoreOrConfig(
   const channelId = `${parsed.channel}:${parsed.id}`;
 
   // 3. Check config channelBridge
-  const proxies = cfg.session?.channelBridge?.proxies;
-  if (!proxies) return null;
+  const channelBridge =
+    (cfg.session?.channelBridge as
+      | {
+          proxies?: Record<string, ChannelBridgeProxyConfig>;
+        }
+      | Record<string, unknown>
+      | undefined) ?? {};
 
-  const proxyConfig = proxies[channelId];
+  // Try the new proxies format first
+  const proxies =
+    typeof channelBridge === "object" && !Array.isArray(channelBridge)
+      ? (channelBridge as any).proxies
+      : undefined;
+  if (!proxies || typeof proxies !== "object") return null;
+
+  const proxyConfig = (proxies as Record<string, ChannelBridgeProxyConfig | undefined>)[channelId];
   if (!proxyConfig?.targetSessionKey) return null;
 
   // Derive owner agent ID from target session key

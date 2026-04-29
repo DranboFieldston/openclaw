@@ -134,7 +134,7 @@ export async function recordInboundSession(params: {
           messageText,
           sourceSessionKey: sessionKey,
           channelId: extChannelId,
-          agentId: proxyBinding.agentId,
+          agentId: proxyBinding.ownerAgentId,
         }).catch(params.onRecordError);
       }
       // If not forwarded (mention-only + not mentioned), the message stays on the proxy session
