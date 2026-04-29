@@ -32,6 +32,7 @@ function containsBotMention(message: string, botUserId: string | null): boolean 
  * Determine whether a bridged message should be forwarded based on proxy mode.
  * - "broadcast": always forward
  * - "mention-only": only forward if bot was mentioned (via WasMentioned flag or content parsing)
+ * - "includeOwnMessages": when false, skip the proxy bot's own messages
  */
 function shouldForwardProxiedMessage(params: {
   mode: "broadcast" | "mention-only";
@@ -39,7 +40,15 @@ function shouldForwardProxiedMessage(params: {
   messageText: string;
   proxySessionKey: string;
   targetSessionKey: string;
+  includeOwnMessages: boolean;
+  senderRecipient?: string;
 }): boolean {
+  // Filter out the proxy bot's own messages if includeOwnMessages is false
+  if (!params.includeOwnMessages) {
+    const proxyBotId = extractBotUserId(params.proxySessionKey);
+    if (proxyBotId && params.senderRecipient === proxyBotId) return false;
+  }
+
   if (params.mode === "broadcast") return true;
 
   // Mention-only mode: check if bot was mentioned
@@ -112,6 +121,8 @@ export async function recordInboundSession(params: {
           messageText,
           proxySessionKey: sessionKey,
           targetSessionKey: proxyBinding.targetSessionKey,
+          includeOwnMessages: proxyBinding.includeOwnMessages,
+          senderRecipient: ctx.SenderRecipient,
         })
       ) {
         canonicalSessionKey = targetKey;
