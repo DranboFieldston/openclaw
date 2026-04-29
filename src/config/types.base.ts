@@ -176,13 +176,11 @@ export type SessionThreadBindingsConfig = {
    * Default: "fork" so the child starts from the requester transcript.
    */
   defaultSpawnContext?: "isolated" | "fork";
+  /** Whether to spawn agent sessions for threads. */
+  spawnAcpSessions?: boolean;
 };
 
 export type SessionThreadBindingsConfig = {
-  /** Whether to spawn agent sessions for threads. */
-  spawnAcpSessions?: boolean;
-  maxAgeHours?: number;
-};
 
 /**
  * Proxy binding config for channel bridging.
@@ -222,6 +220,10 @@ export type SessionConfig = {
   };
   /** Shared defaults for thread-bound session routing across channels/providers. */
   threadBindings?: SessionThreadBindingsConfig;
+  /** Channel bridge proxy configuration for forwarding group/channel messages to main sessions. */
+  channelBridge?: {
+    proxies?: Record<string, ChannelBridgeProxyConfig>;
+  };
   /** Automatic session store maintenance (pruning, capping, archive retention, disk budget). */
   maintenance?: SessionMaintenanceConfig;
 };
