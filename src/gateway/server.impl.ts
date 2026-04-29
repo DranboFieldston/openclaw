@@ -118,6 +118,8 @@ const logChannels = log.child("channels");
 let cachedChannelRuntimePromise: Promise<PluginRuntime["channel"]> | null = null;
 let cachedStartupChannelRuntimePromise: Promise<ChannelRuntimeSurface> | null = null;
 
+let cachedChannelRuntime: ReturnType<typeof createPluginRuntime>["channel"] | null = null;
+
 function getChannelRuntime() {
   cachedChannelRuntimePromise ??= import("../plugins/runtime/runtime-channel.js").then(
     ({ createRuntimeChannel }) => createRuntimeChannel(),
