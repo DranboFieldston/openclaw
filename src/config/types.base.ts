@@ -155,6 +155,25 @@ export type SessionThreadBindingsConfig = {
   maxAgeHours?: number;
 };
 
+export type SessionThreadBindingsConfig = {
+  /** Whether to spawn agent sessions for threads. */
+  spawnAcpSessions?: boolean;
+  maxAgeHours?: number;
+};
+
+/**
+ * Proxy binding config for channel bridging.
+ * Used in `session.channelBridge.proxies` for the proxy session redirect system.
+ */
+export type ChannelBridgeProxyConfig = {
+  /** Target session key for proxied messages. */
+  targetSessionKey: string;
+  /** Proxy mode: "broadcast" forwards all messages, "mention-only" only forwards mentions. */
+  mode?: "broadcast" | "mention-only";
+  /** Whether to include the proxy bot's own messages. Default: true. */
+  includeOwnMessages?: boolean;
+};
+
 export type SessionConfig = {
   scope?: SessionScope;
   /** DM session scoping (default: "main"). */
