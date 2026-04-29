@@ -12,6 +12,7 @@ import { normalizeStoreSessionKey, resolveSessionStoreEntry } from "./store-entr
 describe("Proxy Binding Logic", () => {
   const mockStore = {
     "agent:proxy-bot:discord:channel:123": {
+      sessionId: "sess-1",
       updatedAt: 1000,
       proxyBinding: {
         proxySessionKey: "agent:proxy-bot:discord:channel:123",
@@ -68,14 +69,53 @@ describe("Proxy Binding Logic", () => {
     expect(binding?.mode).toBe("broadcast");
   });
 
-  it("returns null for inactive or missing proxy binding from store", () => {
-    const inactiveStore = {
-      "agent:proxy-bot": {
-        proxyBinding: { status: "paused" },
+  it("resolves proxy binding from config using full session key (per-agent mapping)", () => {
+    const cfg = {
+      session: {
+        channelBridge: {
+          proxies: {
+            // Full session key mapping: different agents can have different targets
+            "agent:proxy-bot:discord:channel:123": {
+              targetSessionKey: "agent:proxy-bot:main",
+              mode: "broadcast",
+              includeOwnMessages: true,
+            },
+          },
+        },
       },
-    };
-    expect(resolveProxyBinding(inactiveStore as any, "agent:proxy-bot")).toBeNull();
-    expect(resolveProxyBinding({} as any, "agent:missing")).toBeNull();
+    } as any;
+    const binding = resolveProxyBindingFromStoreOrConfig(
+      cfg,
+      {} as any,
+      "agent:proxy-bot:discord:channel:123",
+    );
+    expect(binding).toBeTruthy();
+    expect(binding?.targetSessionKey).toBe("agent:proxy-bot:main");
+    expect(binding?.mode).toBe("broadcast");
+  });
+
+  it("falls back to channelId lookup when full session key not in config", () => {
+    const cfg = {
+      session: {
+        channelBridge: {
+          proxies: {
+            // Only channelId mapping exists (no full session key)
+            "discord:123": {
+              targetSessionKey: "agent:main-bot:discord:direct:999",
+              mode: "broadcast",
+              includeOwnMessages: true,
+            },
+          },
+        },
+      },
+    } as any;
+    const binding = resolveProxyBindingFromStoreOrConfig(
+      cfg,
+      {} as any,
+      "agent:proxy-bot:discord:channel:123",
+    );
+    expect(binding).toBeTruthy();
+    expect(binding?.targetSessionKey).toBe("agent:main-bot:discord:direct:999");
   });
 });
 

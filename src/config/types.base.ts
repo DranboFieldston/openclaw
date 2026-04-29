@@ -153,12 +153,8 @@ export type SessionThreadBindingsConfig = {
    * Session auto-unfocuses once this age is reached even if active. Set to 0 to disable. Default: 0.
    */
   maxAgeHours?: number;
-};
-
-export type SessionThreadBindingsConfig = {
   /** Whether to spawn agent sessions for threads. */
   spawnAcpSessions?: boolean;
-  maxAgeHours?: number;
 };
 
 /**
@@ -203,6 +199,10 @@ export type SessionConfig = {
   };
   /** Shared defaults for thread-bound session routing across channels/providers. */
   threadBindings?: SessionThreadBindingsConfig;
+  /** Channel bridge proxy configuration for forwarding group/channel messages to main sessions. */
+  channelBridge?: {
+    proxies?: Record<string, ChannelBridgeProxyConfig>;
+  };
   /** Automatic session store maintenance (pruning, capping, archive retention, disk budget). */
   maintenance?: SessionMaintenanceConfig;
 };

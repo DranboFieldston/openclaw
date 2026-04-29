@@ -692,7 +692,7 @@ export function resolveProxyBindingFromStoreOrConfig(
   if (!parsed?.id) return null;
   const channelId = `${parsed.channel}:${parsed.id}`;
 
-  // 3. Check config channelBridge
+  // 3. Check config channelBridge with per-session key then channelId fallback
   const channelBridge =
     (cfg.session?.channelBridge as
       | {
@@ -701,14 +701,16 @@ export function resolveProxyBindingFromStoreOrConfig(
       | Record<string, unknown>
       | undefined) ?? {};
 
-  // Try the new proxies format first
   const proxies =
     typeof channelBridge === "object" && !Array.isArray(channelBridge)
       ? (channelBridge as any).proxies
       : undefined;
   if (!proxies || typeof proxies !== "object") return null;
 
-  const proxyConfig = (proxies as Record<string, ChannelBridgeProxyConfig | undefined>)[channelId];
+  // Try full session key first (allows per-agent mapping), then fall back to channelId
+  const proxyConfig =
+    (proxies as Record<string, ChannelBridgeProxyConfig | undefined>)[sessionKey] ??
+    (proxies as Record<string, ChannelBridgeProxyConfig | undefined>)[channelId];
   if (!proxyConfig?.targetSessionKey) return null;
 
   // Derive owner agent ID from target session key
