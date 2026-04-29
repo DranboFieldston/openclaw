@@ -64,6 +64,16 @@ export type LatestAssistantTranscriptText = {
   timestamp?: number;
 };
 
+/** Bridge message metadata stored in the transcript details field. */
+export type BridgeTranscriptMetadata = {
+  sourceSessionKey: string;
+  sourceChannel: string;
+  channelId: string;
+  channelName?: string;
+  senderName?: string;
+  senderId?: string;
+};
+
 export async function resolveSessionTranscriptFile(params: {
   sessionId: string;
   sessionKey: string;
@@ -107,6 +117,103 @@ export async function resolveSessionTranscriptFile(params: {
     sessionFile,
     sessionEntry,
   };
+}
+
+/**
+ * Append a bridged (proxied) user message to a target session's transcript.
+ *
+ * This injects a message into the target session so its AI can see channel history
+ * and distinguish bridged messages from DMs.
+ */
+export async function appendBridgeMessageToSessionTranscript(params: {
+  /** Session key of the TARGET session to append the bridged message to. */
+  sessionKey: string;
+  /** Original inbound message text that was bridged from the channel. */
+  messageText: string;
+  /** Source session key where the message originated (the proxy/guild session). */
+  sourceSessionKey: string;
+  /** Channel ID (e.g. "discord:1466..."). */
+  channelId: string;
+  /** Human-readable channel name (e.g. "#the-office"). */
+  channelName?: string;
+  /** Sender display name (e.g. "Colin"). */
+  senderName?: string;
+  /** Sender user ID (e.g. "327959..."). */
+  senderId?: string;
+  /** Optional agent ID for store path resolution. */
+  agentId?: string;
+  /** Optional override for store path (mostly for tests). */
+  storePath?: string;
+}): Promise<SessionTranscriptAppendResult> {
+  const sessionKey = params.sessionKey.trim();
+  if (!sessionKey) {
+    return { ok: false, reason: "missing sessionKey" };
+  }
+  if (!params.messageText?.trim()) {
+    return { ok: false, reason: "empty messageText" };
+  }
+
+  const storePath = params.storePath ?? resolveDefaultSessionStorePath(params.agentId);
+  const store = loadSessionStore(storePath, { skipCache: true });
+  const normalizedKey = normalizeStoreSessionKey(sessionKey);
+  const entry = (store[normalizedKey] ?? store[sessionKey]) as SessionEntry | undefined;
+  if (!entry?.sessionId) {
+    return { ok: false, reason: `unknown sessionKey: ${sessionKey}` };
+  }
+
+  let sessionFile: string;
+  try {
+    const resolvedSessionFile = await resolveAndPersistSessionFile({
+      sessionId: entry.sessionId,
+      sessionKey,
+      sessionStore: store,
+      storePath,
+      sessionEntry: entry,
+      agentId: params.agentId,
+      sessionsDir: path.dirname(storePath),
+    });
+    sessionFile = resolvedSessionFile.sessionFile;
+  } catch (err) {
+    return {
+      ok: false,
+      reason: formatErrorMessage(err),
+    };
+  }
+
+  await ensureSessionHeader({ sessionFile, sessionId: entry.sessionId });
+
+  // Build the formatted content with channel context for the AI.
+  // Format: "[Bridged from #channel (Discord: channelId)] senderName: messageText"
+  const channelLabel = params.channelName ? params.channelName : `[channel:${params.channelId}]`;
+  const sourcePrefix = `[Bridged from ${channelLabel} (Discord: ${params.channelId})]`;
+  const senderLabel = params.senderName ? `${params.senderName}: ` : "";
+  const formattedText = `${sourcePrefix} ${senderLabel}${params.messageText}`;
+
+  // Build bridge metadata for programmatic access.
+  const metadata: BridgeTranscriptMetadata = {
+    sourceSessionKey: params.sourceSessionKey,
+    sourceChannel: "discord",
+    channelId: params.channelId,
+    channelName: params.channelName,
+    senderName: params.senderName,
+    senderId: params.senderId,
+  };
+
+  // Determine the customType based on source channel for filtering.
+  const customType = `bridge:${params.channelId.split(":")[0] ?? "unknown"}`;
+
+  const { SessionManager } = await loadPiCodingAgentModule();
+  const sessionManager = SessionManager.open(sessionFile);
+  const messageId = sessionManager.appendMessage({
+    role: "user" as const,
+    content: [{ type: "text" as const, text: formattedText }],
+    provider: "openclaw",
+    bridge: true,
+    timestamp: Date.now(),
+    metadata,
+  } as Parameters<SessionManager["appendMessage"]>[0]);
+
+  return { ok: true, sessionFile, messageId };
 }
 
 export async function readLatestAssistantTextFromSessionTranscript(
