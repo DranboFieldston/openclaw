@@ -79,7 +79,6 @@ export const SessionSchema = z
               .object({
                 targetSessionKey: z.string(),
                 mode: z.enum(["broadcast", "mention-only"]).optional(),
-                includeOwnMessages: z.boolean().optional(),
               })
               .strict(),
           )

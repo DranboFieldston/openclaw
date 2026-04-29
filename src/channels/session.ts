@@ -33,8 +33,7 @@ function containsBotMention(message: string, botUserId: string | null): boolean 
  * - "broadcast": always forward
  * - "mention-only": only forward if bot was mentioned (via WasMentioned flag or content parsing)
  * Note: Most channels filter bot messages at the API level, so bot-self-message
- *   looping isn't a practical concern. `includeOwnMessages` is kept for future
- *   channel-agnostic filtering if needed.
+ *   looping isn't a practical concern.
  */
 function shouldForwardProxiedMessage(params: {
   mode: "broadcast" | "mention-only";

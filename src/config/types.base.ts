@@ -166,8 +166,6 @@ export type ChannelBridgeProxyConfig = {
   targetSessionKey: string;
   /** Proxy mode: "broadcast" forwards all messages, "mention-only" only forwards mentions. */
   mode?: "broadcast" | "mention-only";
-  /** Whether to include the proxy bot's own messages. Default: true. */
-  includeOwnMessages?: boolean;
 };
 
 export type SessionConfig = {

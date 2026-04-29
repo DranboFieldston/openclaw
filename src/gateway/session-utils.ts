@@ -723,7 +723,6 @@ export function resolveProxyBindingFromStoreOrConfig(
     ownerAgentId: targetAgentId,
     mode: proxyConfig.mode ?? "broadcast",
     status: "active",
-    includeOwnMessages: proxyConfig.includeOwnMessages ?? true,
     createdAt: Date.now(),
   };
 }

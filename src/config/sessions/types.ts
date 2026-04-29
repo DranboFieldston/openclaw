@@ -19,7 +19,6 @@ export type ProxyBinding = {
   ownerAgentId: string;
   mode: "broadcast" | "mention-only";
   status: "active" | "paused" | "closed";
-  includeOwnMessages: boolean;
   createdAt: number;
   lastActivity?: number;
 };
