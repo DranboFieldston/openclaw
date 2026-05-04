@@ -180,8 +180,6 @@ export type SessionThreadBindingsConfig = {
   spawnAcpSessions?: boolean;
 };
 
-export type SessionThreadBindingsConfig = {
-
 /**
  * Proxy binding config for channel bridging.
  * Used in `session.channelBridge.proxies` for the proxy session redirect system.
