@@ -25,6 +25,7 @@ import type { ToolFsPolicy } from "./tool-fs-policy.js";
 import { isToolAllowedByPolicyName } from "./tool-policy-match.js";
 import { createAgentsListTool } from "./tools/agents-list-tool.js";
 import { createCanvasTool } from "./tools/canvas-tool.js";
+import { createChannelBroadcastTool } from "./tools/channel-broadcast-tool.js";
 import type { AnyAgentTool } from "./tools/common.js";
 import { createCronTool } from "./tools/cron-tool.js";
 import { createEmbeddedCallGateway } from "./tools/embedded-gateway-stub.js";
@@ -563,6 +564,10 @@ export function createOpenClawTools(
             sandboxed: options?.sandboxed,
             config: resolvedConfig,
             callGateway: openClawToolsDeps.callGateway,
+          }),
+          createChannelBroadcastTool({
+            agentSessionKey: options?.agentSessionKey,
+            agentChannel: options?.agentChannel,
           }),
           createSessionsSpawnTool({
             agentSessionKey: options?.agentSessionKey,

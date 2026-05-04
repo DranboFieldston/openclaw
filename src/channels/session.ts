@@ -172,6 +172,12 @@ export async function recordInboundSession(params: {
   if (!update) {
     return;
   }
+  // Skip route update for bridged messages — they should be "heard" (injected into
+  // transcript) but should NOT overwrite the agent's main delivery route.
+  // The agent uses channel_broadcast to intentionally respond to bridged channels.
+  if (proxyRedirected) {
+    return;
+  }
   if (shouldSkipPinnedMainDmRouteUpdate(update.mainDmOwnerPin)) {
     return;
   }
