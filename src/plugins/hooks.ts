@@ -7,6 +7,11 @@
 
 import { formatErrorMessage } from "../infra/errors.js";
 import { concatOptionalTextSegments } from "../shared/text/join-segments.js";
+import type {
+  PluginHookBeforeRouteInboundMessageContext,
+  PluginHookBeforeRouteInboundMessageEvent,
+  PluginHookBeforeRouteInboundMessageResult,
+} from "./hook-message.types.js";
 import type { GlobalHookRunnerRegistry, HookRunnerRegistry } from "./hook-registry.types.js";
 import type {
   PluginHookAfterCompactionEvent,
@@ -123,6 +128,9 @@ export type {
   PluginHookBeforeInstallContext,
   PluginHookBeforeInstallEvent,
   PluginHookBeforeInstallResult,
+  PluginHookBeforeRouteInboundMessageContext,
+  PluginHookBeforeRouteInboundMessageEvent,
+  PluginHookBeforeRouteInboundMessageResult,
 };
 
 export type HookRunnerLogger = {
@@ -769,6 +777,29 @@ export function createHookRunner(
     return runVoidHook("message_sent", event, ctx);
   }
 
+  /**
+   * Run before_route_inbound_message hook.
+   *
+   * Fired before OpenClaw resolves the canonical session key for an inbound
+   * message. Allows plugins to redirect messages to a different session
+   * (e.g. bridging guild channels to the main session) or suppress delivery.
+   * Runs sequentially — first handler returning a non-null result wins.
+   */
+  async function runBeforeRouteInboundMessage(
+    event: PluginHookBeforeRouteInboundMessageEvent,
+    ctx: PluginHookBeforeRouteInboundMessageContext,
+  ): Promise<PluginHookBeforeRouteInboundMessageResult | undefined> {
+    return runModifyingHook<
+      "before_route_inbound_message",
+      PluginHookBeforeRouteInboundMessageResult
+    >("before_route_inbound_message", event, ctx, {
+      // First handler that returns a non-null/non-undefined result wins.
+      mergeResults: (acc, next) => next ?? acc,
+      shouldStop: (result) => result !== undefined && result !== null,
+      terminalLabel: "first-writer",
+    });
+  }
+
   // =========================================================================
   // Tool Hooks
   // =========================================================================
@@ -1130,6 +1161,7 @@ export function createHookRunner(
     runReplyDispatch,
     runMessageSending,
     runMessageSent,
+    runBeforeRouteInboundMessage,
     // Tool hooks
     runBeforeToolCall,
     runAfterToolCall,

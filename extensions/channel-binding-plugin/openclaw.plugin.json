@@ -1,0 +1,39 @@
+{
+  "id": "channel-binding",
+  "activation": {
+    "onStartup": true
+  },
+  "name": "Channel Binding",
+  "description": "Explicit channel routing via channel_send tool and inbound bridging",
+  "contracts": {
+    "tools": ["channel_send"]
+  },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "proxyBindings": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "channelId": { "type": "string" },
+            "targetSessionKey": { "type": "string" },
+            "mode": {
+              "type": "string",
+              "enum": ["broadcast", "mention-only"]
+            },
+            "status": {
+              "type": "string",
+              "enum": ["active", "inactive"]
+            },
+            "botUserId": { "type": "string" },
+            "createdAt": { "type": "string" },
+            "lastActivity": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}
