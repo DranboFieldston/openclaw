@@ -29,6 +29,9 @@ import type {
   PluginHookMessageSendingEvent,
   PluginHookMessageSendingResult,
   PluginHookMessageSentEvent,
+  PluginHookBeforeRouteInboundMessageContext,
+  PluginHookBeforeRouteInboundMessageEvent,
+  PluginHookBeforeRouteInboundMessageResult,
 } from "./hook-message.types.js";
 import type { PluginJsonValue } from "./host-hook-json.js";
 import type {
@@ -66,6 +69,9 @@ export type {
   PluginHookMessageSendingEvent,
   PluginHookMessageSendingResult,
   PluginHookMessageSentEvent,
+  PluginHookBeforeRouteInboundMessageContext,
+  PluginHookBeforeRouteInboundMessageEvent,
+  PluginHookBeforeRouteInboundMessageResult,
 } from "./hook-message.types.js";
 
 export type PluginHookName =
@@ -103,7 +109,8 @@ export type PluginHookName =
   | "cron_changed"
   | "before_dispatch"
   | "reply_dispatch"
-  | "before_install";
+  | "before_install"
+  | "before_route_inbound_message";
 
 export const PLUGIN_HOOK_NAMES = [
   "before_model_resolve",
@@ -141,6 +148,7 @@ export const PLUGIN_HOOK_NAMES = [
   "before_dispatch",
   "reply_dispatch",
   "before_install",
+  "before_route_inbound_message",
 ] as const satisfies readonly PluginHookName[];
 
 type MissingPluginHookNames = Exclude<PluginHookName, (typeof PLUGIN_HOOK_NAMES)[number]>;
@@ -944,6 +952,13 @@ export type PluginHookHandlerMap = {
     event: PluginHookBeforeInstallEvent,
     ctx: PluginHookBeforeInstallContext,
   ) => Promise<PluginHookBeforeInstallResult | void> | PluginHookBeforeInstallResult | void;
+  before_route_inbound_message: (
+    event: PluginHookBeforeRouteInboundMessageEvent,
+    ctx: PluginHookBeforeRouteInboundMessageContext,
+  ) =>
+    | Promise<PluginHookBeforeRouteInboundMessageResult | void>
+    | PluginHookBeforeRouteInboundMessageResult
+    | void;
 };
 
 export type PluginHookRegistration<K extends PluginHookName = PluginHookName> = {

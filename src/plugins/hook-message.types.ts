@@ -92,3 +92,59 @@ export type PluginHookMessageSentEvent = {
   parentSpanId?: string;
   error?: string;
 };
+
+// =============================================================================
+// before_route_inbound_message hook
+// =============================================================================
+
+/**
+ * Context available to the before_route_inbound_message hook.
+ */
+export type PluginHookBeforeRouteInboundMessageContext = PluginHookMessageContext & {
+  parentConversationId?: string;
+  sessionKey?: string;
+};
+
+/**
+ * Event data for the before_route_inbound_message hook.
+ *
+ * Fired before OpenClaw resolves the canonical session key for an inbound message.
+ * Allows plugins to redirect messages to a different session (e.g. bridging guild
+ * channels to a main session) or suppress delivery entirely.
+ */
+export type PluginHookBeforeRouteInboundMessageEvent = {
+  /** Channel name (e.g. "discord", "telegram") */
+  channel: string;
+  /** Account ID the message came through */
+  accountId?: string;
+  /** Raw channel-specific conversation/channel ID */
+  conversationId?: string;
+  /** Parent conversation/thread ID (for thread-aware channels) */
+  parentConversationId?: string;
+  /** Message body text */
+  body: string;
+  /** Chat type */
+  isGroup: boolean;
+  /** Raw sender ID */
+  senderId?: string;
+  /** Sender display name */
+  senderName?: string;
+  /** Original session key before any routing redirect */
+  originalSessionKey: string;
+};
+
+/**
+ * Result from the before_route_inbound_message hook.
+ *
+ * If handled with redirectSessionKey, OpenClaw uses that instead of its
+ * resolved canonical session key. If handled with suppressDelivery is true,
+ * the message will not be delivered to any session.
+ */
+export type PluginHookBeforeRouteInboundMessageResult = {
+  /** Whether a plugin has decided the routing outcome */
+  handled: true;
+  /** Override session key — route the message to this session instead */
+  redirectSessionKey?: string;
+  /** Drop the message entirely without delivering it to any session */
+  suppressDelivery?: boolean;
+};

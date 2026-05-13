@@ -17,6 +17,8 @@ import {
 import type { PreparedChannelTurn, RunChannelTurnParams } from "../channels/turn/types.js";
 export type { ChannelTurnRecordOptions } from "../channels/turn/types.js";
 import type { OpenClawConfig } from "../config/types.openclaw.js";
+import type { PluginHookBeforeRouteInboundMessageContext } from "../plugins/hook-message.types.js";
+import { getGlobalHookRunner } from "../plugins/hook-runner-global.js";
 import { createChannelReplyPipeline } from "./channel-reply-pipeline.js";
 import { createNormalizedOutboundDeliverer, type OutboundReplyPayload } from "./reply-payload.js";
 
@@ -112,7 +114,12 @@ type RecordInboundSessionAndDispatchReplyParams = Parameters<
   typeof recordInboundSessionAndDispatchReply
 >[0];
 
-/** Resolve the shared dispatch base and immediately record + dispatch one inbound reply turn. */
+/**
+ * Resolve the shared dispatch base and immediately record + dispatch one inbound reply turn.
+ *
+ * Fires `before_route_inbound_message` hook before building the dispatch base.
+ * Plugins can redirect the message to a different session key or suppress delivery.
+ */
 export async function dispatchInboundReplyWithBase(
   params: BuildInboundReplyDispatchBaseParams &
     Pick<
@@ -120,6 +127,51 @@ export async function dispatchInboundReplyWithBase(
       "deliver" | "onRecordError" | "onDispatchError" | "replyOptions"
     >,
 ): Promise<void> {
+  // ── before_route_inbound_message hook ───────────────────────────────────
+  // Fire before the route is used. Plugins (e.g. channel-bridge) can
+  // redirect the message to a different session or suppress delivery.
+  const hookRunner = getGlobalHookRunner();
+  if (hookRunner) {
+    const bodyText = String(params.ctxPayload.Body ?? params.ctxPayload.BodyForAgent ?? "");
+    const isGroup =
+      params.ctxPayload.ChatType === "group" || params.ctxPayload.ChatType === "supergroup";
+    const hookCtx: PluginHookBeforeRouteInboundMessageContext = {
+      channelId: params.channel,
+      accountId: params.accountId,
+      conversationId: params.ctxPayload.NativeChannelId ?? params.ctxPayload.OriginatingTo,
+      parentConversationId: params.ctxPayload.MessageThreadId
+        ? String(params.ctxPayload.MessageThreadId)
+        : undefined,
+      sessionKey: params.route.sessionKey,
+    };
+    const hookEvent = {
+      channel: params.channel,
+      accountId: params.accountId,
+      conversationId: hookCtx.conversationId,
+      parentConversationId: hookCtx.parentConversationId,
+      body: bodyText,
+      isGroup,
+      senderId: params.ctxPayload.From,
+      originalSessionKey: params.route.sessionKey,
+    };
+    const hookResult = await hookRunner.runBeforeRouteInboundMessage(hookEvent, hookCtx);
+    if (hookResult?.handled) {
+      // Redirect: override the route session key with the plugin's target
+      if (
+        hookResult.redirectSessionKey &&
+        hookResult.redirectSessionKey !== params.route.sessionKey
+      ) {
+        params = {
+          ...params,
+          route: { ...params.route, sessionKey: hookResult.redirectSessionKey },
+        };
+      }
+      // Suppress: drop the message entirely
+      if (hookResult.suppressDelivery) {
+        return;
+      }
+    }
+  }
   const dispatchBase = buildInboundReplyDispatchBase(params);
   await recordInboundSessionAndDispatchReply({
     ...dispatchBase,
